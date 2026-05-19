@@ -962,7 +962,7 @@
           <div class="form-row-half">
             <div>
               <label class="form-label">Your Name / Handle <span>*</span></label>
-              <input class="form-input" type="text" id="cf-name" placeholder="e.g. Quakeguy">
+              <input class="form-input" type="text" id="cf-name" placeholder="e.g. ]STALLION[">
             </div>
             <div>
               <label class="form-label">Your Clan Tag</label>
@@ -1127,13 +1127,13 @@
     };
 
     try {
-      // JSONBin.io - free bin storage, replace BIN_ID and API_KEY after setup
+      // JSONBin.io - paste your Bin ID and ACCESS KEY (write-only) here
       const BIN_ID = '6a0c1d3e6610dd3ae86bead6';
-      const API_KEY = '$2a$10$GEgEt.VaXkHwGfHleDynVOtTplHlmLL683O3BxL6FxOAN5AeO/Fxi';
+      const ACCESS_KEY = '$2a$10$GEgEt.VaXkHwGfHleDynVOtTplHlmLL683O3BxL6FxOAN5AeO/Fxi';
 
-      // First get existing messages
+      // Read current messages first using Access Key
       const getRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': API_KEY }
+        headers: { 'X-Access-Key': ACCESS_KEY }
       });
       const getData = await getRes.json();
       const existing = getData.record?.messages || [];
@@ -1141,15 +1141,17 @@
       // Append new message
       existing.push(payload);
 
-      // Save back
-      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+      // Write back
+      const putRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY
+          'X-Access-Key': ACCESS_KEY
         },
         body: JSON.stringify({ messages: existing })
       });
+
+      if (!putRes.ok) throw new Error('Write failed: ' + putRes.status);
 
       status.style.color = '#4caf50';
       status.textContent = '>> Message sent. FishMarket will get back to you on Discord.';
