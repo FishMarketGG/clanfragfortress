@@ -959,56 +959,46 @@
         </div>
 
         <div class="contact-form">
-          <form action="https://formsubmit.co/thefishmarket204@gmail.com" method="POST">
-
-            <!-- Honeypot anti-spam -->
-            <input type="text" name="_honey" style="display:none">
-            <!-- Disable captcha -->
-            <input type="hidden" name="_captcha" value="false">
-            <!-- Subject line -->
-            <input type="hidden" name="_subject" value="[FF] Clan Frag Fortress Contact Form">
-
-            <div class="form-row-half">
-              <div>
-                <label class="form-label">Your Name / Handle <span>*</span></label>
-                <input class="form-input" type="text" name="name" placeholder="e.g. Quakeguy" required>
-              </div>
-              <div>
-                <label class="form-label">Your Clan Tag</label>
-                <input class="form-input" type="text" name="clan" placeholder="e.g. [XYZ] or N/A">
-              </div>
+          <div class="form-row-half">
+            <div>
+              <label class="form-label">Your Name / Handle <span>*</span></label>
+              <input class="form-input" type="text" id="cf-name" placeholder="e.g. ]STALLION[">
             </div>
-
-            <div class="form-row">
-              <label class="form-label">Your Email <span>*</span></label>
-              <input class="form-input" type="email" name="email" placeholder="your@email.com" required>
+            <div>
+              <label class="form-label">Your Clan Tag</label>
+              <input class="form-input" type="text" id="cf-clan" placeholder="e.g. [XYZ] or N/A">
             </div>
+          </div>
 
-            <div class="form-row">
-              <label class="form-label">Reason for Contact <span>*</span></label>
-              <select class="form-select" name="reason" required>
-                <option value="" disabled selected>-- Select one --</option>
-                <option value="Challenge">&#9876; Send a Challenge</option>
-                <option value="Recruitment">&#9658; Recruitment / Joining</option>
-                <option value="Server Info">&#9632; Server Info</option>
-                <option value="News / Update">&#9670; News / Update</option>
-                <option value="General">&#9632; General Inquiry</option>
-              </select>
-            </div>
+          <div class="form-row">
+            <label class="form-label">Your Discord ID <span>*</span></label>
+            <input class="form-input" type="text" id="cf-discord" placeholder="e.g. fishmarket#0001 or 123456789012345678">
+          </div>
 
-            <div class="form-row">
-              <label class="form-label">Additional Information <span>*</span></label>
-              <textarea class="form-textarea" name="message" placeholder="Include any relevant details — server preferences, challenge terms, questions, etc." required></textarea>
-            </div>
+          <div class="form-row">
+            <label class="form-label">Reason for Contact <span>*</span></label>
+            <select class="form-select" id="cf-reason">
+              <option value="" disabled selected>-- Select one --</option>
+              <option value="Challenge">&#9876; Send a Challenge</option>
+              <option value="Recruitment">&#9658; Recruitment / Joining</option>
+              <option value="Server Info">&#9632; Server Info</option>
+              <option value="News / Update">&#9670; News / Update</option>
+              <option value="General">&#9632; General Inquiry</option>
+            </select>
+          </div>
 
-            <div class="form-row">
-              <label class="form-label">Clan Site URL <span style="color:#444;">(optional)</span></label>
-              <input class="form-input" type="url" name="clansite" placeholder="https://yourclan.com">
-            </div>
+          <div class="form-row">
+            <label class="form-label">Message <span>*</span></label>
+            <textarea class="form-textarea" id="cf-message" placeholder="Include any relevant details — server preferences, challenge terms, questions, etc."></textarea>
+          </div>
 
-            <button class="form-submit" type="submit">&gt;&gt; Send Message</button>
+          <div class="form-row">
+            <label class="form-label">Clan Site URL <span style="color:#444;">(optional)</span></label>
+            <input class="form-input" type="url" id="cf-clansite" placeholder="https://yourclan.com">
+          </div>
 
-          </form>
+          <div id="cf-status" style="margin-bottom:12px; font-size:11px; color:#666; min-height:16px;"></div>
+          <button class="form-submit" onclick="submitContactForm()">&gt;&gt; Send Message</button>
         </div>
 
         <div class="contact-gif-section">
@@ -1109,6 +1099,70 @@
     if (btnEl) {
       document.querySelectorAll('.sub-nav-btn').forEach(b => b.classList.remove('active'));
       btnEl.classList.add('active');
+    }
+  }
+
+  async function submitContactForm() {
+    const name = document.getElementById('cf-name').value.trim();
+    const clan = document.getElementById('cf-clan').value.trim();
+    const discord = document.getElementById('cf-discord').value.trim();
+    const reason = document.getElementById('cf-reason').value;
+    const message = document.getElementById('cf-message').value.trim();
+    const clansite = document.getElementById('cf-clansite').value.trim();
+    const status = document.getElementById('cf-status');
+
+    if (!name || !discord || !reason || !message) {
+      status.style.color = '#cc1100';
+      status.textContent = '>> ERROR: Please fill in all required fields.';
+      return;
+    }
+
+    status.style.color = '#888';
+    status.textContent = '>> Sending...';
+
+    const payload = {
+      name, clan, discord, reason, message, clansite,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    try {
+      // JSONBin.io - free bin storage, replace BIN_ID and API_KEY after setup
+      const BIN_ID = 'YOUR_BIN_ID';
+      const API_KEY = 'YOUR_JSONBIN_API_KEY';
+
+      // First get existing messages
+      const getRes = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        headers: { 'X-Master-Key': API_KEY }
+      });
+      const getData = await getRes.json();
+      const existing = getData.record?.messages || [];
+
+      // Append new message
+      existing.push(payload);
+
+      // Save back
+      await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': API_KEY
+        },
+        body: JSON.stringify({ messages: existing })
+      });
+
+      status.style.color = '#4caf50';
+      status.textContent = '>> Message sent. FishMarket will get back to you on Discord.';
+      document.getElementById('cf-name').value = '';
+      document.getElementById('cf-clan').value = '';
+      document.getElementById('cf-discord').value = '';
+      document.getElementById('cf-reason').value = '';
+      document.getElementById('cf-message').value = '';
+      document.getElementById('cf-clansite').value = '';
+
+    } catch(e) {
+      status.style.color = '#cc1100';
+      status.textContent = '>> ERROR: Could not send message. Try Discord directly.';
     }
   }
 </script>
